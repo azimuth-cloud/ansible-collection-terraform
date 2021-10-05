@@ -1,0 +1,83 @@
+---
+
+- name: Ensure Terraform bin directory exists
+  file:
+    path: "{{ terraform_binary_directory }}"
+    state: directory
+
+- name: Download Terraform binary
+  unarchive:
+    remote_src: yes
+    src: "{{ terraform_binary_url }}"
+    dest: "{{ terraform_binary_directory }}"
+
+- name: Detect backend type
+  include_tasks: detect_backend_type.yml
+  when: terraform_backend_type is not defined
+
+- name: Write backend configuration
+  copy:
+    content: |
+      terraform {
+        backend "{{ terraform_backend_type }}" { }
+      }
+    dest: "{{ terraform_project_path }}/backend.tf"
+
+- name: Provision infrastructure using Terraform
+  terraform:
+    binary_path: "{{ terraform_binary_path }}"
+    project_path: "{{ terraform_project_path }}"
+    state: "{{ terraform_state }}"
+    backend_config: "{{ terraform_backend_config }}"
+    force_init: yes
+    variables: "{{ terraform_variables }}"
+  register: terraform_provision
+
+- name: Populate in-memory inventory
+  block:
+    - name: Set facts from Terraform outputs
+      set_fact:
+        cluster_gateway_ip: "{{ terraform_provision.outputs.cluster_gateway_ip.value }}"
+        cluster_nodes: "{{ terraform_provision.outputs.cluster_nodes.value }}"
+
+    - name: Set fact for SSH common args for cluster nodes
+      set_fact:
+        # The hosts are accessed via a bastion
+        # We can't just use ProxyJump here because we need agent forwarding, which is disabled even when
+        # StrictHostKeyChecking=no in the case where a host key changes and the host is still in the
+        # UserKnownHostsFile
+        # So we need to also make sure that the UserKnownHostsFile is empty for the proxy command
+        cluster_ssh_common_args: "-o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'"
+
+    - name: Add cluster nodes to in-memory inventory
+      add_host:
+        name: "{{ node.name }}"
+        # Add the node to it's specified primary group and the cluster group
+        groups:
+          - cluster
+          - "{{ node.primary_group }}"
+        ansible_host: "{{ node.ip }}"
+        ansible_user: "{{ cluster_ssh_user }}"
+        ansible_ssh_private_key_file: "{{ cluster_ssh_private_key_file }}"
+        ansible_ssh_common_args: "{{ cluster_ssh_common_args }}"
+      loop: "{{ cluster_nodes }}"
+      loop_control:
+        loop_var: node
+        label: "{{ node.name }}"
+
+    - name: Wait for cluster nodes to become accessible
+      wait_for_connection:
+        # Wait for 10 mins for host to become available
+        timeout: 600
+      vars:
+        ansible_connection: ssh
+        ansible_host: "{{ node.ip }}"
+        ansible_user: "{{ cluster_ssh_user }}"
+        ansible_ssh_private_key_file: "{{ cluster_ssh_private_key_file }}"
+        ansible_ssh_common_args: "{{ cluster_ssh_common_args }}"
+        ansible_python_interpreter: auto_legacy
+      loop: "{{ cluster_nodes }}"
+      loop_control:
+        loop_var: node
+        label: "{{ node.name }}"
+  when: terraform_state == 'present'

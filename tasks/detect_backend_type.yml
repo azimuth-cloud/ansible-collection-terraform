@@ -1,0 +1,18 @@
+---
+
+# These tasks attempt to detect the Terraform backend type to use based
+# on the environment in which the playbook is being executed
+#
+# For now, we only support Consul with a fallback to local
+
+# If environment variables for Consul are present, use it
+- name: Set Consul backend
+  set_fact:
+    terraform_backend_type: consul
+  when: "'CONSUL_HTTP_ADDR' in ansible_env"
+
+# If no backend is set by now, use local
+- name: Set local backend
+  set_fact:
+    terraform_backend_type: local
+  when: terraform_backend_type is not defined
