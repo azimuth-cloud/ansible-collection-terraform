@@ -65,6 +65,13 @@
         loop_var: node
         label: "{{ node.name }}"
 
+    - name: Set facts for nodes
+      include_tasks: set_node_facts.yml
+      loop: "{{ cluster_nodes }}"
+      loop_control:
+        loop_var: node
+        label: "{{ node.name }}"
+
     - name: Wait for cluster nodes to become accessible
       wait_for_connection:
         # Wait for 10 mins for host to become available

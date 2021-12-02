@@ -1,0 +1,10 @@
+---
+
+- name: Set stored facts for node
+  set_fact:
+    "{{ item.key }}": "{{ item.value }}"
+  delegate_to: "{{ node.name }}"
+  delegate_facts: true
+  loop: "{{ node.facts | default({}, true) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
