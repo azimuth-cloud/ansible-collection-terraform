@@ -72,6 +72,8 @@
         loop_var: node
         label: "{{ node.name }}"
 
+    - meta: reset_connection
+
     - name: Wait for cluster nodes to become accessible
       wait_for_connection:
         # Wait for 10 mins for host to become available
