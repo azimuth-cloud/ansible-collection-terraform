@@ -30,6 +30,7 @@
     state: "{{ terraform_state }}"
     backend_config: "{{ terraform_backend_config }}"
     force_init: yes
+    init_reconfigure: yes
     variables: "{{ terraform_variables }}"
   register: terraform_provision
 
