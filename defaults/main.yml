@@ -14,7 +14,7 @@ terraform_zip_name: terraform_{{ terraform_version }}_{{ terraform_system }}_{{ 
 terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/{{ terraform_zip_name }}
 
 # The directory to put the Terraform binary in
-terraform_binary_directory: "{{ playbook_dir }}/.bin"
+terraform_binary_directory: "{{ inventory_dir }}/.bin"
 # The path to the Terraform binary
 terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
 
