@@ -26,7 +26,7 @@ terraform_state_key: "tfstate"
 terraform_backend_config_defaults:
   # For the local backend, set the state path to the inventory directory
   local:
-    path: "{{ inventory_dir }}/.terraform/terraform.tfstate"
+    path: "{{ inventory_dir }}/terraform.tfstate"
   # For Consul, set path and gzip but require connection into to come from the environment
   consul:
     path: "{{ terraform_state_key }}"
