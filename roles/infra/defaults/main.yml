@@ -18,21 +18,13 @@ terraform_binary_directory: "{{ inventory_dir }}/.bin"
 # The path to the Terraform binary
 terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
 
-# The default Terraform state key for backends that support it
-terraform_state_key: "tfstate"
-# Default backend configs for supported backend types
-# Any backend type can be used as long as all the required options are provided
-# via either the environment or the "terraform_backend_config" variable
-terraform_backend_config_defaults:
-  # For the local backend, set the state path to the inventory directory
-  local:
-    path: "{{ inventory_dir }}/terraform.tfstate"
-  # For Consul, set path and gzip but require connection into to come from the environment
-  consul:
-    path: "{{ terraform_state_key }}"
-    gzip: "true"
-# The backend configuration for the selected backend
-terraform_backend_config: "{{ terraform_backend_config_defaults[terraform_backend_type] | default({}) }}"
+# By default, provision the infrastructure rather than tear it down
+terraform_state: present
+
+# Default to the local backend if not otherwise specified
+terraform_backend_type: local
+# The backend configuration to use
+terraform_backend_config: {}
 
 # The SSH user defaults to centos
 cluster_ssh_user: centos

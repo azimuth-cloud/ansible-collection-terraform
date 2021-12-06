@@ -11,10 +11,6 @@
     src: "{{ terraform_binary_url }}"
     dest: "{{ terraform_binary_directory }}"
 
-- name: Detect backend type
-  include_tasks: detect_backend_type.yml
-  when: terraform_backend_type is not defined
-
 - name: Write backend configuration
   copy:
     content: |
