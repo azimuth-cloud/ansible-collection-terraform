@@ -1,0 +1,13 @@
+namespace: stackhpc
+name: terraform
+version: 0.1.0
+description: Infrastructure provisioning and inventory population using Terraform.
+readme: README.md
+authors:
+  - "Matt Pryor <matt@stackhpc.com>"
+license:
+  - "Apache-2.0"
+repository: "https://github.com/stackhpc/ansible-collection-terraform"
+
+dependencies:
+  community.general: "*"

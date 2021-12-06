@@ -1,4 +1,4 @@
-# ansible-role-terraform-infra
+# ansible-collection-terraform
 
-Role that enables the provisioning of infrastructure and population of the in-memory
-inventory for CaaS appliances using Terraform.
+Collection that enables the provisioning of infrastructure and population of the in-memory
+inventory using Terraform.
