@@ -34,23 +34,30 @@
   block:
     - name: Set facts from Terraform outputs
       set_fact:
-        cluster_ssh_private_key: "{{ terraform_provision.outputs.cluster_ssh_private_key.value }}"
         cluster_gateway_ip: "{{ terraform_provision.outputs.cluster_gateway_ip.value }}"
         cluster_nodes: "{{ terraform_provision.outputs.cluster_nodes.value }}"
 
-    - name: Get tempfile for SSH private key
-      tempfile:
-      register: cluster_ssh_private_key_tempfile
+    # We allow the SSH private key file to be specified
+    # If it is not, we expect a private key to be in the Terraform outputs
+    - block:
+        - name: Get SSH private key from Terraform output
+          set_fact:
+            cluster_ssh_private_key: "{{ terraform_provision.outputs.cluster_ssh_private_key.value }}"
 
-    - name: Set fact for SSH private key file
-      set_fact:
-        cluster_ssh_private_key_file: "{{ cluster_ssh_private_key_tempfile.path }}"
+        - name: Get tempfile for SSH private key
+          tempfile:
+          register: cluster_ssh_private_key_tempfile
 
-    - name: Write cluster private key to file
-      copy:
-        content: "{{ cluster_ssh_private_key }}"
-        dest: "{{ cluster_ssh_private_key_file }}"
-        mode: u=rw
+        - name: Set fact for SSH private key file
+          set_fact:
+            cluster_ssh_private_key_file: "{{ cluster_ssh_private_key_tempfile.path }}"
+
+        - name: Write cluster private key to file
+          copy:
+            content: "{{ cluster_ssh_private_key }}"
+            dest: "{{ cluster_ssh_private_key_file }}"
+            mode: u=rw
+      when: cluster_ssh_private_key_file is not defined
 
     - name: Set fact for SSH common args for cluster nodes
       set_fact:
