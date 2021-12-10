@@ -44,20 +44,19 @@
           set_fact:
             cluster_ssh_private_key: "{{ terraform_provision.outputs.cluster_ssh_private_key.value }}"
 
-        - name: Ensure inventory SSH directory exists
-          file:
-            path: "{{ inventory_dir }}/.ssh"
-            state: directory
-
-        - name: Set fact for SSH private key file
-          set_fact:
-            cluster_ssh_private_key_file: "{{ inventory_dir }}/.ssh/deploy-key"
+        - name: Get tempfile for SSH private key
+          tempfile:
+          register: cluster_ssh_private_key_tempfile
 
         - name: Write cluster private key to file
           copy:
             content: "{{ cluster_ssh_private_key }}"
-            dest: "{{ cluster_ssh_private_key_file }}"
+            dest: "{{ cluster_ssh_private_key_tempfile.path }}"
             mode: u=rw
+
+        - name: Set fact for SSH private key file
+          set_fact:
+            cluster_ssh_private_key_file: "{{ cluster_ssh_private_key_tempfile.path }}"
       when: cluster_ssh_private_key_file is not defined
 
     - name: Set fact for SSH common args for cluster nodes
