@@ -1,0 +1,12 @@
+---
+
+- name: Ensure Terraform bin directory exists
+  file:
+    path: "{{ terraform_binary_directory }}"
+    state: directory
+
+- name: Download Terraform binary
+  unarchive:
+    remote_src: yes
+    src: "{{ terraform_binary_url }}"
+    dest: "{{ terraform_binary_directory }}"

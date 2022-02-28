@@ -1,0 +1,13 @@
+# The Terraform version to install
+terraform_version: 1.1.6
+# The OS variant and architecture to use
+# See https://github.com/helm/helm/releases for the available options
+terraform_os: "{{ ansible_system | lower }}"
+terraform_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+# The name of the Terraform zip
+terraform_zip_name: terraform_{{ terraform_version }}_{{ terraform_os }}_{{ terraform_architecture }}.zip
+# The URL of the Terraform binary
+terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/{{ terraform_zip_name }}
+
+# The directory to put the Terraform binary in
+terraform_binary_directory: /usr/local/bin

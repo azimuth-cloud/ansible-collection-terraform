@@ -1,16 +1,5 @@
 ---
 
-- name: Ensure Terraform bin directory exists
-  file:
-    path: "{{ terraform_binary_directory }}"
-    state: directory
-
-- name: Download Terraform binary
-  unarchive:
-    remote_src: yes
-    src: "{{ terraform_binary_url }}"
-    dest: "{{ terraform_binary_directory }}"
-
 - name: Write backend configuration
   copy:
     content: |
@@ -21,7 +10,7 @@
 
 - name: Provision infrastructure using Terraform
   terraform:
-    binary_path: "{{ terraform_binary_path }}"
+    binary_path: "{{ terraform_binary_path or omit }}"
     project_path: "{{ terraform_project_path }}"
     state: "{{ terraform_state }}"
     backend_config: "{{ terraform_backend_config }}"
@@ -72,9 +61,7 @@
       add_host:
         name: "{{ node.name }}"
         # Add the node to it's specified primary group and the cluster group
-        groups:
-          - cluster
-          - "{{ node.primary_group }}"
+        groups: "{{ ['cluster'] + node.groups }}"
         ansible_host: "{{ node.ip }}"
         ansible_user: "{{ cluster_ssh_user }}"
         ansible_ssh_private_key_file: "{{ cluster_ssh_private_key_file }}"

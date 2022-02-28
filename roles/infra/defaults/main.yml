@@ -1,22 +1,5 @@
-# The Terraform version to install
-terraform_version: 1.0.8
-# Map architectures as reported by ansible_architecture to those in Terraform URLs
-terraform_architectures:
-  x86_64: amd64
-  arm64: arm64
-# The system name to use in the Terraform zip name
-terraform_system: "{{ ansible_system | lower }}"
-# The architecture to use in the Terraform zip name
-terraform_architecture: "{{ terraform_architectures[ansible_architecture] }}"
-# The name of the Terraform zip
-terraform_zip_name: terraform_{{ terraform_version }}_{{ terraform_system }}_{{ terraform_architecture }}.zip
-# The URL of the Terraform binary
-terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/{{ terraform_zip_name }}
-
-# The directory to put the Terraform binary in
-terraform_binary_directory: "{{ inventory_dir }}/.bin"
-# The path to the Terraform binary
-terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
+# The path to the Terraform binary, if not in the PATH
+terraform_binary_path:
 
 # By default, provision the infrastructure rather than tear it down
 terraform_state: present
@@ -25,8 +8,10 @@ terraform_state: present
 terraform_backend_type: local
 # The backend configuration to use
 terraform_backend_config: {}
+# The variables to use when invoking Terraform
+terraform_variables: {}
 
 # The SSH user defaults to centos
-cluster_ssh_user: centos
+cluster_ssh_user: "{{ undef(hint = 'cluster_ssh_user is required') }}"
 # The gateway user defaults to the regular SSH user
 cluster_gateway_user: "{{ cluster_ssh_user }}"
