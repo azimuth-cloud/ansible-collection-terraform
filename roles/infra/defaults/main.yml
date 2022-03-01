@@ -11,7 +11,5 @@ terraform_backend_config: {}
 # The variables to use when invoking Terraform
 terraform_variables: {}
 
-# The SSH user defaults to centos
-cluster_ssh_user: "{{ undef(hint = 'cluster_ssh_user is required') }}"
 # The gateway user defaults to the regular SSH user
 cluster_gateway_user: "{{ cluster_ssh_user }}"
