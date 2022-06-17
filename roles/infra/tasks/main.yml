@@ -84,13 +84,7 @@
       wait_for_connection:
         # Wait for 10 mins for host to become available
         timeout: 600
-      vars:
-        ansible_connection: ssh
-        ansible_host: "{{ node.ip }}"
-        ansible_user: "{{ cluster_ssh_user }}"
-        ansible_ssh_private_key_file: "{{ cluster_ssh_private_key_file }}"
-        ansible_ssh_common_args: "{{ cluster_ssh_common_args }}"
-        ansible_python_interpreter: auto_legacy
+      delegate_to: "{{ node.name }}"
       loop: "{{ cluster_nodes }}"
       loop_control:
         loop_var: node
