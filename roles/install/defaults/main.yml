@@ -1,7 +1,6 @@
 # The Terraform version to install
-terraform_version: 1.1.6
+terraform_version: 1.2.5
 # The OS variant and architecture to use
-# See https://github.com/helm/helm/releases for the available options
 terraform_os: "{{ ansible_system | lower }}"
 terraform_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
 # The name of the Terraform zip
