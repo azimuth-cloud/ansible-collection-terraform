@@ -13,3 +13,7 @@ terraform_variables: {}
 
 # The gateway user defaults to the regular SSH user
 cluster_gateway_user: "{{ cluster_ssh_user }}"
+
+# Automatically approve Terraform apply and don't prompt
+# for confirmation
+terraform_autoapprove: true
