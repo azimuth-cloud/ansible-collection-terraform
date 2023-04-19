@@ -1,5 +1,5 @@
 # The Terraform version to install
-terraform_version: 1.2.5
+terraform_version: 1.4.5
 # The OS variant and architecture to use
 terraform_os: "{{ ansible_system | lower }}"
 terraform_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
