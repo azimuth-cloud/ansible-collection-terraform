@@ -5,8 +5,29 @@
     path: "{{ terraform_binary_directory }}"
     state: directory
 
+- name: Check if Terraform binary exists
+  stat:
+    path: "{{ terraform_binary_directory }}/terraform"
+  register: terraform_binary
+
+- name: Check current Terraform version
+  command:
+    cmd: "{{ terraform_binary_directory }}/terraform version -json"
+  register: current_terraform_version
+  when: terraform_binary.stat.exists
+
+- name: Set current Terraform version fact
+  set_fact:
+    terraform_version_stdout: "{{ current_terraform_version.stdout | from_json }}"
+  when: terraform_binary.stat.exists
+
 - name: Download Terraform binary
   unarchive:
     remote_src: yes
     src: "{{ terraform_binary_url }}"
     dest: "{{ terraform_binary_directory }}"
+  when: >
+    (not terraform_binary.stat.exists)
+    or
+    (terraform_version_stdout.terraform_version is version(terraform_version, '!='))
+
