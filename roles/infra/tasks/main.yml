@@ -79,8 +79,36 @@
       loop_control:
         loop_var: node
         label: "{{ node.name }}"
+    
+    # Using delegate_to and wait_for_connection can result in interpreter
+    # discovery failures. Wait for a service to be listening on port 22
+    # before wait_for_connection.
+    # https://github.com/ansible/ansible/issues/80514
+    - name: Wait for sshd to be listening on the gateway node
+      wait_for:
+        port: 22
+        host: "{{ cluster_gateway_ip }}"
+        timeout: 600
 
-    - name: Wait for cluster nodes to become accessible
+    - name: Wait for Ansible to connect to the gateway node
+      wait_for_connection:
+        # Wait for 10 mins for host to become available
+        timeout: 600
+      delegate_to: "{{ cluster_gateway_ip }}"
+
+    - name: Wait for sshd to be listening on cluster nodes
+      wait_for:
+        # Wait for 10 mins for host to become available
+        timeout: 600
+        host: "{{ node.ip }}"
+        port: 22
+      delegate_to: "{{ cluster_gateway_ip }}"
+      loop: "{{ cluster_nodes }}"
+      loop_control:
+        loop_var: node
+        label: "{{ node.ip }}"
+
+    - name: Wait for Ansible to connect to the cluster nodes
       wait_for_connection:
         # Wait for 10 mins for host to become available
         timeout: 600
