@@ -13,3 +13,6 @@ terraform_variables: {}
 
 # The gateway user defaults to the regular SSH user
 cluster_gateway_user: "{{ cluster_ssh_user }}"
+
+# Adopt infrastructure into the in-memory inventory
+terraform_adopt_inventory: true
