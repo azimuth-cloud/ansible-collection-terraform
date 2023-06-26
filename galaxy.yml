@@ -10,4 +10,4 @@ license:
 repository: "https://github.com/stackhpc/ansible-collection-terraform"
 
 dependencies:
-  community.general: 7.1.x
+  community.general: ">=7.0.0,<8.0.0"
