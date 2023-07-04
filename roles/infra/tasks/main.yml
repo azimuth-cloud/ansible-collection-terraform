@@ -57,6 +57,14 @@
         # So we need to also make sure that the UserKnownHostsFile is empty for the proxy command
         cluster_ssh_common_args: "-o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'"
 
+    - name: Add gateway node to in-memory inventory
+      add_host:
+        name: gateway
+        ansible_host: "{{ cluster_gateway_ip }}"
+        ansible_user: "{{ cluster_ssh_user }}"
+        ansible_ssh_private_key_file: "{{ cluster_ssh_private_key_file }}"
+        inventory_dir: "{{ inventory_dir }}"
+
     - name: Add cluster nodes to in-memory inventory
       add_host:
         name: "{{ node.name }}"
@@ -94,7 +102,7 @@
       wait_for_connection:
         # Wait for 10 mins for host to become available
         timeout: 600
-      delegate_to: "{{ cluster_gateway_ip }}"
+      delegate_to: gateway
 
     - name: Wait for sshd to be listening on cluster nodes
       wait_for:
@@ -102,7 +110,7 @@
         timeout: 600
         host: "{{ node.ip }}"
         port: 22
-      delegate_to: "{{ cluster_gateway_ip }}"
+      delegate_to: gateway
       loop: "{{ cluster_nodes }}"
       loop_control:
         loop_var: node
