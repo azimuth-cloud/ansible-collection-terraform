@@ -1,33 +1,88 @@
 ---
 
-- name: Ensure Terraform bin directory exists
-  file:
-    path: "{{ terraform_binary_directory }}"
-    state: directory
-
-- name: Check if Terraform binary exists
-  stat:
-    path: "{{ terraform_binary_directory }}/terraform"
-  register: terraform_binary
-
-- name: Check current Terraform version
-  command:
-    cmd: "{{ terraform_binary_directory }}/terraform version -json"
-  register: current_terraform_version
-  when: terraform_binary.stat.exists
-
-- name: Set current Terraform version fact
+- name: Get directories on the PATH
   set_fact:
-    terraform_version_stdout: "{{ current_terraform_version.stdout | from_json }}"
-  when: terraform_binary.stat.exists
+    terraform_path_dirs: "{{ terraform_path_dirs | default([]) + [item] }}"
+  loop: "{{ lookup('ansible.builtin.env', 'PATH') | split(':') }}"
 
-- name: Download Terraform binary
-  unarchive:
-    remote_src: yes
-    src: "{{ terraform_binary_url }}"
-    dest: "{{ terraform_binary_directory }}"
-  when: >
-    (not terraform_binary.stat.exists)
-    or
-    (terraform_version_stdout.terraform_version is version(terraform_version, '!='))
+- name: Check if Terraform binary exists in PATH directories
+  stat:
+    path: "{{ item }}/terraform"
+  register: terraform_binary_paths
+  loop: "{{ ( [terraform_binary_directory] + terraform_path_dirs ) | unique }}"
 
+- name: Check Terraform versions available on the PATH
+  command:
+    cmd: "{{ item.stat.path }} version -json"
+  register: current_terraform_version
+  changed_when: false
+  loop: "{{ terraform_binary_paths.results | selectattr('stat.exists', 'equalto', True) }}"
+  loop_control:
+    label: "{{ item.stat.path }}"
+
+- name: Set current Terraform versions fact
+  set_fact:
+    terraform_version_stdout: >-
+      {{
+        terraform_version_stdout | default([]) + 
+          [
+            {'path': item.item.stat.path, 'version': item.stdout | from_json }
+            ] 
+        }}
+  loop: "{{ current_terraform_version.results }}"
+  loop_control:
+    label: "{{ item.item.stat.path }}"
+
+- name: Filter Terraform paths to match version requirements
+  set_fact:
+    terraform_filtered_path: >-
+      {{
+        terraform_version_stdout | 
+        sort(attribute='version.terraform_version') |
+        selectattr(
+          'version.terraform_version', 'version', terraform_version_min, '>='
+          ) |
+        selectattr(
+          'version.terraform_version', 'version', terraform_version_max, '<='
+          ) |
+        last | 
+        default([])
+      }}
+
+- name: Set current Terraform path fact
+  set_fact:
+    terraform_binary_path: "{{ terraform_filtered_path.path }}"
+  when:
+    - terraform_filtered_path | length == 1
+
+- name: Download Terraform binary if an acceptable version is not available
+  block:
+  - name: Ensure Terraform bin directory exists
+    file:
+      path: "{{ terraform_binary_directory }}"
+      state: directory
+
+  - name: Download Terraform binary
+    unarchive:
+      remote_src: yes
+      src: "{{ terraform_binary_url }}"
+      dest: "{{ terraform_binary_directory }}"
+  
+  - name: Set current Terraform path fact
+    set_fact:
+      terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
+ 
+  when: terraform_binary_path is not defined
+  become: "{{ terraform_download_binary_become }}"
+
+- name: Display Terraform path and version message
+  debug:
+    msg: >- 
+      Using Terraform version {{ terraform_detected_version }}
+      from {{ terraform_binary_path }}.
+  vars:
+    terraform_detected_version: >-
+      {{ terraform_filtered_path.version.terraform_version
+        if terraform_filtered_path | length > 0
+        else terraform_version_max
+      }}

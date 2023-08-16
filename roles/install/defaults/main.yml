@@ -1,12 +1,20 @@
-# The Terraform version to install
-terraform_version: 1.4.5
+# Acceptable Terraform versions. If a binary fulfilling these criteria is not found,
+# terraform_version_max will be downloaded.
+# v1.5.5 is the latest version available under the MPL license:
+# https://www.hashicorp.com/license-faq#products-covered-by-bsl
+terraform_version_min: 1.5.5
+terraform_version_max: 1.5.5
+
 # The OS variant and architecture to use
 terraform_os: "{{ ansible_system | lower }}"
 terraform_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
 # The name of the Terraform zip
-terraform_zip_name: terraform_{{ terraform_version }}_{{ terraform_os }}_{{ terraform_architecture }}.zip
+terraform_zip_name: terraform_{{ terraform_version_max }}_{{ terraform_os }}_{{ terraform_architecture }}.zip
 # The URL of the Terraform binary
-terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version }}/{{ terraform_zip_name }}
+terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version_max }}/{{ terraform_zip_name }}
 
 # The directory to put the Terraform binary in
 terraform_binary_directory: /usr/local/bin
+
+# Become root when downloading Terraform binary
+terraform_download_binary_become: false
