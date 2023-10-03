@@ -13,8 +13,13 @@ terraform_zip_name: terraform_{{ terraform_version_max }}_{{ terraform_os }}_{{ 
 # The URL of the Terraform binary
 terraform_binary_url: https://releases.hashicorp.com/terraform/{{ terraform_version_max }}/{{ terraform_zip_name }}
 
-# The directory to put the Terraform binary in
+# The directory to put the Terraform binary in if we download it
 terraform_binary_directory: /usr/local/bin
+
+# List of directories to search for a suitable Terraform
+# By default, search the binary directory + the directories in the path
+terraform_additional_search_directories: "{{ lookup('ansible.builtin.env', 'PATH') | split(':') | list }}"
+terraform_search_directories: "{{ ([terraform_binary_directory] + terraform_additional_search_directories) | unique }}"
 
 # Become root when downloading Terraform binary
 terraform_download_binary_become: false
