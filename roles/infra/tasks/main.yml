@@ -1,6 +1,6 @@
 ---
 
-- name: Write backend configuration
+- name: Write backend type configuration
   copy:
     content: |
       terraform {
@@ -8,16 +8,47 @@
       }
     dest: "{{ terraform_project_path }}/backend.tf"
 
+- name: Write backend configuration options
+  copy:
+    content: "{{ terraform_backend_config | to_json }}"
+    dest: "{{ terraform_project_path }}/backend_config.json"
+
 - name: Provision infrastructure using Terraform
   terraform:
     binary_path: "{{ terraform_binary_path or omit }}"
     project_path: "{{ terraform_project_path }}"
     state: "{{ terraform_state }}"
-    backend_config: "{{ terraform_backend_config }}"
+    backend_config_files:
+      - "{{ terraform_project_path }}/backend_config.json"
     force_init: yes
     init_reconfigure: yes
     variables: "{{ terraform_variables }}"
-  register: terraform_provision
+  register: terraform_provision_state
+  when: not terraform_readonly
+
+- name: Get outputs from Terraform state
+  block:
+    - name: Initialise Terraform
+      command: >-
+        {{ terraform_binary_path | default('terraform', True) }}
+          -chdir="{{ terraform_project_path }}"
+          init
+          -input=false
+          -reconfigure
+          -backend-config="{{ terraform_project_path }}/backend_config.json"
+
+    - name: Pull Terraform state
+      command: >-
+        {{ terraform_binary_path | default('terraform', True) }}
+          -chdir="{{ terraform_project_path }}"
+          state
+          pull
+      register: terraform_state_pull
+
+    - name: Set Terraform provision state fact
+      set_fact:
+        terraform_provision_state: "{{ terraform_state_pull.stdout | from_json }}"
+  when: terraform_readonly
 
 - name: Populate in-memory inventory
   include_tasks: inventory_adopt.yml
