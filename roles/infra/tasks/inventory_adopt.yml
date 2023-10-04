@@ -2,15 +2,15 @@
 
 - name: Set facts from Terraform outputs
   set_fact:
-    cluster_gateway_ip: "{{ terraform_provision.outputs.cluster_gateway_ip.value }}"
-    cluster_nodes: "{{ terraform_provision.outputs.cluster_nodes.value }}"
+    cluster_gateway_ip: "{{ terraform_provision_state.outputs.cluster_gateway_ip.value }}"
+    cluster_nodes: "{{ terraform_provision_state.outputs.cluster_nodes.value }}"
 
 # We allow the SSH private key file to be specified
 # If it is not, we expect a private key to be in the Terraform outputs
 - block:
     - name: Get SSH private key from Terraform output
       set_fact:
-        cluster_ssh_private_key: "{{ terraform_provision.outputs.cluster_ssh_private_key.value }}"
+        cluster_ssh_private_key: "{{ terraform_provision_state.outputs.cluster_ssh_private_key.value }}"
     - name: Get tempfile for SSH private key
       tempfile:
       register: cluster_ssh_private_key_tempfile

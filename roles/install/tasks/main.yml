@@ -1,88 +1,66 @@
 ---
 
-- name: Get directories on the PATH
-  set_fact:
-    terraform_path_dirs: "{{ terraform_path_dirs | default([]) + [item] }}"
-  loop: "{{ lookup('ansible.builtin.env', 'PATH') | split(':') }}"
-
-- name: Check if Terraform binary exists in PATH directories
+- name: Check if Terraform binary exists in search directories
   stat:
     path: "{{ item }}/terraform"
   register: terraform_binary_paths
-  loop: "{{ ( [terraform_binary_directory] + terraform_path_dirs ) | unique }}"
+  loop: "{{ terraform_search_directories }}"
 
-- name: Check Terraform versions available on the PATH
-  command:
-    cmd: "{{ item.stat.path }} version -json"
-  register: current_terraform_version
+- name: Get available Terraform versions
+  command: "{{ item.stat.path }} version -json"
+  register: terraform_version_info
   changed_when: false
-  loop: "{{ terraform_binary_paths.results | selectattr('stat.exists', 'equalto', True) }}"
+  loop: "{{ terraform_binary_paths.results | selectattr('stat.exists') }}"
   loop_control:
     label: "{{ item.stat.path }}"
 
-- name: Set current Terraform versions fact
+- name: Set Terraform versions fact
   set_fact:
-    terraform_version_stdout: >-
-      {{
-        terraform_version_stdout | default([]) + 
-          [
-            {'path': item.item.stat.path, 'version': item.stdout | from_json }
-            ] 
-        }}
-  loop: "{{ current_terraform_version.results }}"
-  loop_control:
-    label: "{{ item.item.stat.path }}"
+    terraform_available_versions: >-
+      [
+        {% for item in terraform_version_info.results %}
+        ("{{ item.item.stat.path }}", "{{ item.stdout | from_json | json_query('terraform_version') }}"),
+        {% endfor %}
+      ]
 
-- name: Filter Terraform paths to match version requirements
+- name: Filter Terraform versions
   set_fact:
-    terraform_filtered_path: >-
-      {{
-        terraform_version_stdout | 
-        sort(attribute='version.terraform_version') |
-        selectattr(
-          'version.terraform_version', 'version', terraform_version_min, '>='
-          ) |
-        selectattr(
-          'version.terraform_version', 'version', terraform_version_max, '<='
-          ) |
-        last | 
-        default([])
+    terraform_acceptable_versions: >-
+      {{-
+        terraform_available_versions |
+          selectattr('1', 'version', terraform_version_min, '>=') |
+          selectattr('1', 'version', terraform_version_max, '<=') |
+          sort(attribute = '1', reverse = True)
       }}
 
-- name: Set current Terraform path fact
+- name: Set Terraform binary path
   set_fact:
-    terraform_binary_path: "{{ terraform_filtered_path.path }}"
-  when:
-    - terraform_filtered_path | length == 1
+    terraform_binary_path: "{{ terraform_acceptable_versions.0.0 }}"
+    terraform_detected_version: "{{ terraform_acceptable_versions.0.1 }}"
+  when: "terraform_acceptable_versions | length > 0"
 
 - name: Download Terraform binary if an acceptable version is not available
   block:
-  - name: Ensure Terraform bin directory exists
-    file:
-      path: "{{ terraform_binary_directory }}"
-      state: directory
+    - name: Ensure Terraform bin directory exists
+      file:
+        path: "{{ terraform_binary_directory }}"
+        state: directory
 
-  - name: Download Terraform binary
-    unarchive:
-      remote_src: yes
-      src: "{{ terraform_binary_url }}"
-      dest: "{{ terraform_binary_directory }}"
-  
-  - name: Set current Terraform path fact
-    set_fact:
-      terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
- 
+    - name: Download Terraform binary
+      unarchive:
+        remote_src: yes
+        src: "{{ terraform_binary_url }}"
+        dest: "{{ terraform_binary_directory }}"
+
+    - name: Set current Terraform path fact
+      set_fact:
+        terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
   when: terraform_binary_path is not defined
   become: "{{ terraform_download_binary_become }}"
 
 - name: Display Terraform path and version message
   debug:
     msg: >- 
-      Using Terraform version {{ terraform_detected_version }}
+      Using Terraform version
+      {{ terraform_detected_version | default(terraform_version_max) }}
       from {{ terraform_binary_path }}.
-  vars:
-    terraform_detected_version: >-
-      {{ terraform_filtered_path.version.terraform_version
-        if terraform_filtered_path | length > 0
-        else terraform_version_max
-      }}
