@@ -46,8 +46,9 @@
       present: Do you want to execute this plan?
       absent: Do you want to delete all resources?
 
-- name: End host if Terraform plan is not approved
-  ansible.builtin.meta: end_host
+- name: Exit if Terraform plan is not approved
+  ansible.builtin.fail:
+    msg: Exiting - Terraform plan not approved
   when: "not (( terraform_autoapprove | bool ) or ( _tf_approve_plan.user_input | default(false) | bool ))"
 
 - name: Apply required infrastructure state using Terraform
