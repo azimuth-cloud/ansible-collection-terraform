@@ -13,7 +13,44 @@
     content: "{{ terraform_backend_config | to_json }}"
     dest: "{{ terraform_project_path }}/backend_config.json"
 
-- name: Provision infrastructure using Terraform
+- name: Create Terraform plan
+  terraform:
+    binary_path: "{{ terraform_binary_path or omit }}"
+    project_path: "{{ terraform_project_path }}"
+    state: planned
+    backend_config_files:
+      - "{{ terraform_project_path }}/backend_config.json"
+    force_init: yes
+    init_reconfigure: yes
+    variables: "{{ terraform_variables }}"
+    plan_file: terraform.plan # TODO: check this is in terraform_project_path
+  register: _tf_plan
+  when: "not terraform_state == 'absent'" # can't plan absences via ansible currently
+  # TODO: make sure still get prompted when deleting
+
+- name: Show Terraform plan
+  debug:
+    msg: "{{ _tf_plan.stdout }}"
+  when: "not terraform_state == 'absent'"
+  # TODO: when in interactive mode
+
+- name: Prompt to approve Terraform changes
+  pause:
+    prompt: "{{ _tf_prompt_msgs[terraform_state] }} (Only 'yes' executes)"
+  register: _tf_approve_plan
+  when:
+    - "'No changes. Your infrastructure matches the configuration.' not in _tf_plan.stdout | default('')"
+    - 'not terraform_autoapprove | bool'
+  vars:
+    _tf_prompt_msgs:
+      present: Do you want to execute this plan?
+      absent: Do you want to delete all resources?
+
+- name: End host if Terraform plan is not approved
+  ansible.builtin.meta: end_host
+  when: "not (( terraform_autoapprove | bool ) or ( _tf_approve_plan.user_input | default(false) | bool ))"
+
+- name: Apply required infrastructure state using Terraform
   terraform:
     binary_path: "{{ terraform_binary_path or omit }}"
     project_path: "{{ terraform_project_path }}"
@@ -23,8 +60,14 @@
     force_init: yes
     init_reconfigure: yes
     variables: "{{ terraform_variables }}"
+    plan_file: terraform.plan  # TODO: check this is in terraform_project_path
   register: terraform_provision_state
   when: not terraform_readonly
+
+- name: Show Terraform apply output
+  debug:
+    msg: "{{ terraform_provision_state.stdout }}"
+  when: "'stdout' in terraform_provision_state"
 
 - name: Get outputs from Terraform state
   block:

@@ -1,4 +1,5 @@
 # The path to the Terraform binary, if not in the PATH
+terraform_autoapprove: false # TODO: maybe default true?
 terraform_binary_path:
 
 # If true, the state from the last deploy is used rather than provisioning
