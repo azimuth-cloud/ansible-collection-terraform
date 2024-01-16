@@ -1,7 +1,7 @@
 # Acceptable OpenTofu versions. If a binary fulfilling these criteria is not found,
 # terraform_version_max will be downloaded.
-terraform_version_min: 1.6.0-alpha5
-terraform_version_max: 1.6.0-alpha5
+terraform_version_min: 1.6.0
+terraform_version_max: 1.6.0
 
 # The OS variant and architecture to use
 terraform_os: "{{ ansible_system | lower }}"
