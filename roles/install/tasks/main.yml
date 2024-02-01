@@ -2,7 +2,7 @@
 
 - name: Check if Terraform binary exists in search directories
   stat:
-    path: "{{ item }}/terraform"
+    path: "{{ item }}/tofu"
   register: terraform_binary_paths
   loop: "{{ terraform_search_directories }}"
 
@@ -39,6 +39,10 @@
     terraform_detected_version: "{{ terraform_acceptable_versions.0.1 }}"
   when: "terraform_acceptable_versions | length > 0"
 
+- name: show terraform_binary_path
+  debug:
+    var: terraform_binary_path
+
 - name: Download Terraform binary if an acceptable version is not available
   block:
     - name: Ensure Terraform bin directory exists
@@ -54,7 +58,7 @@
 
     - name: Set current Terraform path fact
       set_fact:
-        terraform_binary_path: "{{ terraform_binary_directory }}/terraform"
+        terraform_binary_path: "{{ terraform_binary_directory }}/tofu"
   when: terraform_binary_path is not defined
   become: "{{ terraform_download_binary_become }}"
 
