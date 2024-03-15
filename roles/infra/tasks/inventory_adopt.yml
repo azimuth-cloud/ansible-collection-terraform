@@ -31,7 +31,8 @@
     # StrictHostKeyChecking=no in the case where a host key changes and the host is still in the
     # UserKnownHostsFile
     # So we need to also make sure that the UserKnownHostsFile is empty for the proxy command
-    cluster_ssh_common_args: "-o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'"
+    cluster_ssh_common_args: >-
+      -o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'
 
 - name: Add cluster nodes to in-memory inventory
   add_host:
