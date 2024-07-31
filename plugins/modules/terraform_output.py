@@ -70,7 +70,7 @@ author: "Matt Pryor (StackHPC)"
 
 EXAMPLES = """
 - name: Read outputs from a previously deployed project
-  stackhpc.terraform.terraform_output:
+  azimuth_cloud.terraform.terraform_output:
     project_path: '{{ project_dir }}'
 """
 
