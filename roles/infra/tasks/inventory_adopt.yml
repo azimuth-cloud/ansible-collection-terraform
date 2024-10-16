@@ -64,7 +64,7 @@
   loop_control:
     loop_var: node
     label: "{{ node.name }}"
-   
+
 # Using delegate_to and wait_for_connection can result in interpreter
 # discovery failures. Wait for a service to be listening on port 22
 # before wait_for_connection.
