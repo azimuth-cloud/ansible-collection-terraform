@@ -91,7 +91,7 @@
   loop: "{{ cluster_nodes }}"
   loop_control:
     loop_var: node
-    label: "{{ node.ip }}"
+    label: "{{ node.name }}"
 
 - name: Wait for Ansible to connect to the cluster nodes
   wait_for_connection:
