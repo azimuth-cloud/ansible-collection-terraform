@@ -1,4 +1,4 @@
-namespace: stackhpc
+namespace: azimuth_cloud
 name: terraform
 version: 0.1.0
 description: Infrastructure provisioning and inventory population using Terraform.
@@ -7,7 +7,7 @@ authors:
   - "Matt Pryor <matt@stackhpc.com>"
 license:
   - "Apache-2.0"
-repository: "https://github.com/stackhpc/ansible-collection-terraform"
+repository: "https://github.com/azimuth-cloud/ansible-collection-terraform"
 
 dependencies:
-  community.general: "4.5.0"
+  community.general: ">=7.0.0,<8.0.0"

@@ -1,6 +1,9 @@
 # The path to the Terraform binary, if not in the PATH
 terraform_binary_path:
 
+# If true, the state from the last deploy is used rather than provisioning
+terraform_readonly: false
+
 # By default, provision the infrastructure rather than tear it down
 terraform_state: present
 
@@ -13,3 +16,6 @@ terraform_variables: {}
 
 # The gateway user defaults to the regular SSH user
 cluster_gateway_user: "{{ cluster_ssh_user }}"
+
+# Adopt infrastructure into the in-memory inventory
+terraform_adopt_inventory: true
