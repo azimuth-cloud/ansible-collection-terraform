@@ -46,6 +46,11 @@
     content: "{{ _terraform_backend_config | to_json }}"
     dest: "{{ terraform_project_path }}/backend_config.json"
 
+- name: Rebuild infrastructure
+  include_tasks: rebuild.yml
+  when:
+    - azimuth_update_reason == 'patch'
+
 - name: Provision infrastructure using Terraform
   terraform:
     binary_path: "{{ terraform_binary_path or omit }}"
