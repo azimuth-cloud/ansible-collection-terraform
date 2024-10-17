@@ -8,6 +8,65 @@
       }
     dest: "{{ terraform_project_path }}/backend.tf"
 
+- block:
+  # Replace force_path_style with use_path_style in
+  # terraform_backend_config. There isn't any simple way to
+  # delete a key/value pair from a dict, so set
+  # terraform_backend_config to null and rebuild it with the
+  # same content, but without force_path_style and with
+  # use_path_style.
+
+  - name: Set a temporary fact containing terraform_backend_config
+    # 1. Create a temporary variable which is a copy of
+    #    terraform_backend_config
+    # 2. Empty the terraform_backend_config variable 
+    set_fact:
+      _terraform_backend_config: "{{ terraform_backend_config }}"
+      terraform_backend_config:
+    when:
+      - terraform_backend_config.force_path_style is defined
+
+  - block:
+    - name: Warn if force_path_style is used in terraform_backend_config
+      # A simple debug.msg isn't obvious in stdout, so fail and ignore the
+      # failure.
+      fail:
+        msg: >-
+          The terraform_backend_config.force_path_style configuration
+          option is deprecated and terraform_backend_config.use_path_style
+          should be used instead!
+      ignore_errors: true
+
+    - name: Rename force_path_style to use_path_style
+      # Reconstitute the empty terraform_backend_config variable from
+      # _terraform_backend_config, adding use_path_style and skipping
+      # force_path_style, in effect making this a "replace" operation. 
+      set_fact:
+        terraform_backend_config: >-
+          {{
+            terraform_backend_config | default({}) | combine({item.key: item.value})
+          }}
+      # Skip the task adding force_path_style to the terraform_backend_config
+      when:
+        - item.key != 'force_path_style'
+      loop_control:
+        # Don't leak S3 credentials to stdout
+        label: "{{ item.key }}"
+      # Iterate over all items in the temporary _terraform_backend_config variable
+      loop: >-
+          {{
+            _terraform_backend_config
+            | combine(
+              { 'use_path_style': _terraform_backend_config.force_path_style}
+            ) | dict2items
+          }}
+    when:
+      - _terraform_backend_config.force_path_style is defined
+
+  when:
+    - terraform_backend_type is defined and terraform_backend_type == 's3'
+    - not terraform_disable_s3_force_path_style_checks
+
 - name: Write backend configuration options
   copy:
     content: "{{ terraform_backend_config | to_json }}"
