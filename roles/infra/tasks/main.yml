@@ -8,9 +8,42 @@
       }
     dest: "{{ terraform_project_path }}/backend.tf"
 
+- name: Set intermediate fact from terraform_backend_config
+  # We need this to be sure that we can beat the precedence of
+  # of terraform_backend_config in the next block, even if it
+  # is supplied as a role param
+  set_fact:
+    _terraform_backend_config: "{{ terraform_backend_config }}"
+
+- block:
+  - name: Warn if force_path_style is used in terraform_backend_config
+    # A simple debug.msg isn't obvious in stdout, so fail and ignore the
+    # failure.
+    fail:
+      msg: >-
+        The terraform_backend_config.force_path_style configuration
+        option is deprecated and terraform_backend_config.use_path_style
+        should be used instead!
+    ignore_errors: true
+
+  - name: Rename force_path_style to use_path_style
+    set_fact:
+      _terraform_backend_config: >-
+        {{
+          terraform_backend_config |
+          dict2items |
+          rejectattr('key', 'eq', 'force_path_style') |
+          items2dict |
+          combine({'use_path_style': terraform_backend_config.force_path_style})
+        }}
+  when:
+    - terraform_backend_type is defined and terraform_backend_type == 's3'
+    - terraform_backend_config.force_path_style is defined
+    - not terraform_disable_s3_force_path_style_checks
+
 - name: Write backend configuration options
   copy:
-    content: "{{ terraform_backend_config | to_json }}"
+    content: "{{ _terraform_backend_config | to_json }}"
     dest: "{{ terraform_project_path }}/backend_config.json"
 
 - name: Provision infrastructure using Terraform
