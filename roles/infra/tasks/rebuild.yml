@@ -1,27 +1,12 @@
 ---
-
-- name: Get outputs from Terraform state
-  block:
-    - name: Initialise Terraform
-      command: >-
-        {{ terraform_binary_path | default('terraform', True) }}
-          -chdir="{{ terraform_project_path }}"
-          init
-          -input=false
-          -reconfigure
-          -backend-config="{{ terraform_project_path }}/backend_config.json"
-
-    - name: Pull Terraform state
-      command: >-
-        {{ terraform_binary_path | default('terraform', True) }}
-          -chdir="{{ terraform_project_path }}"
-          state
-          pull
-      register: terraform_state_pull
-
-    - name: Set Terraform provision state fact
-      set_fact:
-        terraform_provision_state: "{{ terraform_state_pull.stdout | from_json }}"
+- name: Initialise Terraform
+  ansible.builtin.command: >-
+    {{ terraform_binary_path | default('terraform', True) }}
+      -chdir="{{ terraform_project_path }}"
+      init
+      -input=false
+      -reconfigure
+      -backend-config="{{ terraform_project_path }}/backend_config.json"
 
 - name: Terraform look at the current state list
   ansible.builtin.command: "{{ terraform_binary_path }} state list"
