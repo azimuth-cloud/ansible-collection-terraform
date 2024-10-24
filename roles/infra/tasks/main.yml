@@ -91,7 +91,7 @@
 
 - name: Wait for rebuilt clusters to re-initialise
   pause:
-    minutes: 2
+    minutes: 3
   when: terraform_rebuild_appliance == 'patch'
 
 - name: Populate in-memory inventory
