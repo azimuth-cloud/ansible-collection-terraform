@@ -1,9 +1,5 @@
 ---
 
-- name: wait until cluster is ready again
-  pause:
-    minutes: 3
-
 - name: Set facts from Terraform outputs
   set_fact:
     cluster_gateway_ip: "{{ terraform_provision_state.outputs.cluster_gateway_ip.value }}"
