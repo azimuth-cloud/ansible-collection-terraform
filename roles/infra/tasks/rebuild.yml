@@ -15,7 +15,7 @@
   register: terraform_state_list
 
 - name: Taint all servers if this is a patch update
-  ansible.builtin.command: "{{ terraform_binary_path }} taint openstack_compute_instance_v2.cluster_server"
+  ansible.builtin.command: "{{ terraform_binary_path }} taint {{ item }}"
   args:
     chdir: "{{ terraform_project_path }}"
   with_items: "{{ terraform_state_list.stdout_lines }}"
