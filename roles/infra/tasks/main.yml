@@ -48,8 +48,7 @@
 
 - name: Rebuild infrastructure
   include_tasks: rebuild.yml
-  when:
-    - azimuth_update_reason == 'patch'
+  when: terraform_rebuild_appliance == 'patch'
 
 - name: Provision infrastructure using Terraform
   terraform:
