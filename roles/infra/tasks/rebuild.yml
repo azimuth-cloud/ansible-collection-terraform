@@ -22,7 +22,6 @@
     - name: Set Terraform provision state fact
       set_fact:
         terraform_provision_state: "{{ terraform_state_pull.stdout | from_json }}"
-  when: terraform_readonly
 
 - name: Terraform look at the current state list
   ansible.builtin.command: "{{ terraform_binary_path }} state list"
