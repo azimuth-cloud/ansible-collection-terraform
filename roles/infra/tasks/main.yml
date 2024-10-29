@@ -89,11 +89,6 @@
         terraform_provision_state: "{{ terraform_state_pull.stdout | from_json }}"
   when: terraform_readonly
 
-- name: Wait for rebuilt clusters to re-initialise
-  pause:
-    minutes: 3
-  when: terraform_rebuild_appliance == 'patch'
-
 - name: Populate in-memory inventory
   include_tasks: inventory_adopt.yml
   when: 
