@@ -86,6 +86,7 @@
     # Wait for 10 mins for host to become available
     timeout: 600
     host: "{{ node.ip }}"
+    search_regex: OpenSSH
     port: 22
   delegate_to: gateway
   loop: "{{ cluster_nodes }}"
