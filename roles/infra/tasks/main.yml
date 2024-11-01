@@ -49,7 +49,7 @@
 - name: Set terraform to rebuild patched appliances
   include_tasks: rebuild.yml
   when:
-    - terraform_rebuild_nodes
+    - terraform_rebuild_nodes | default(false)
     - not terraform_readonly
 
 - name: Provision infrastructure using Terraform
