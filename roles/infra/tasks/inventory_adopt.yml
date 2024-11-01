@@ -73,6 +73,7 @@
   wait_for:
     port: 22
     host: "{{ cluster_gateway_ip }}"
+    search_regex: OpenSSH
     timeout: 600
 
 - name: Wait for Ansible to connect to the gateway node
@@ -86,6 +87,7 @@
     # Wait for 10 mins for host to become available
     timeout: 600
     host: "{{ node.ip }}"
+    search_regex: OpenSSH
     port: 22
   delegate_to: gateway
   loop: "{{ cluster_nodes }}"
