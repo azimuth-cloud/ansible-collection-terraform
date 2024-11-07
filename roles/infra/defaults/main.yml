@@ -23,3 +23,5 @@ terraform_adopt_inventory: true
 # Disable checks for force_path_style s3 option
 terraform_disable_s3_force_path_style_checks: false
 
+# If set to true, taint and rebuild the Terraform infrastructure.
+terraform_rebuild_nodes: false
