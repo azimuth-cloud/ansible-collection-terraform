@@ -46,6 +46,12 @@
     content: "{{ _terraform_backend_config | to_json }}"
     dest: "{{ terraform_project_path }}/backend_config.json"
 
+- name: Set terraform to rebuild patched appliances
+  include_tasks: rebuild.yml
+  when:
+    - terraform_rebuild_nodes
+    - not terraform_readonly
+
 - name: Provision infrastructure using Terraform
   terraform:
     binary_path: "{{ terraform_binary_path or omit }}"

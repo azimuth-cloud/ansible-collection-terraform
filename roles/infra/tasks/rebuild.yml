@@ -1,0 +1,22 @@
+---
+- name: Initialise Terraform
+  ansible.builtin.command: >-
+    {{ terraform_binary_path | default('terraform', True) }}
+      -chdir="{{ terraform_project_path }}"
+      init
+      -input=false
+      -reconfigure
+      -backend-config="{{ terraform_project_path }}/backend_config.json"
+
+- name: Terraform look at the current state list
+  ansible.builtin.command: "{{ terraform_binary_path }} state list"
+  args:
+    chdir: "{{ terraform_project_path }}"
+  register: terraform_state_list
+
+- name: Taint all servers if this is a patch update
+  ansible.builtin.command: "{{ terraform_binary_path }} taint {{ item }}"
+  args:
+    chdir: "{{ terraform_project_path }}"
+  with_items: "{{ terraform_state_list.stdout_lines }}"
+  when: item is match("openstack_compute_instance_v2..*")
