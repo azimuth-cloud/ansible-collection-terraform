@@ -29,7 +29,7 @@
     # The hosts are accessed via a bastion
     # We can't just use ProxyJump here because we need agent forwarding, which is disabled even when
     # StrictHostKeyChecking=no in the case where a host key changes and the host is still in the
-    # UserKnownHostsFile
+    # UserKnownHostsFile
     # So we need to also make sure that the UserKnownHostsFile is empty for the proxy command
     cluster_ssh_common_args: >-
       -o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'
@@ -45,7 +45,7 @@
 - name: Add cluster nodes to in-memory inventory
   add_host:
     name: "{{ node.name }}"
-    # Add the node to it's specified primary group and the cluster group
+    # Add the node to it's specified primary group and the cluster group
     groups: "{{ ['cluster'] + node.groups }}"
     ansible_host: "{{ node.ip }}"
     ansible_user: "{{ cluster_ssh_user }}"
@@ -80,6 +80,10 @@
   wait_for_connection:
     # Wait for 10 mins for host to become available
     timeout: 600
+    # Wait 10 seconds before attempting first connection
+    # to try to mitigate wait_for_connection module's
+    # poor handling of DNS lookup failures
+    delay: 10
   delegate_to: gateway
 
 - name: Wait for sshd to be listening on cluster nodes
