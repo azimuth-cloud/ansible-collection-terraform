@@ -65,15 +65,6 @@
     loop_var: node
     label: "{{ node.name }}"
 
-- name: Test that cluster gateway FQDN is resolvable
-  assert:
-    that: "{{ cluster_gateway_ip is ansible.utils.resolvable }}"
-    fail_msg: "{{ cluster_gateway_ip }} cannot be resolved"
-  register: resolve
-  until: not resolve.failed
-  retries: 20
-  when: cluster_gateway_ip is not ansible.utils.ip_address
-
 # Using delegate_to and wait_for_connection can result in interpreter
 # discovery failures. Wait for a service to be listening on port 22
 # before wait_for_connection.
@@ -84,16 +75,6 @@
     host: "{{ cluster_gateway_ip }}"
     search_regex: OpenSSH
     timeout: 600
-
-- name: Test that cluster gateway FQDN is resolvable
-  assert:
-    that: "{{ cluster_gateway_ip is ansible.utils.resolvable }}"
-    fail_msg: "{{ cluster_gateway_ip }} cannot be resolved"
-  register: resolve
-  until: not resolve.failed
-  retries: 20
-  when: cluster_gateway_ip is not ansible.utils.ip_address
-  delegate_to: gateway
 
 - name: Wait for Ansible to connect to the gateway node
   wait_for_connection:
