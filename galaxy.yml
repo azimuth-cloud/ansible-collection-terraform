@@ -10,4 +10,4 @@ license:
 repository: "https://github.com/azimuth-cloud/ansible-collection-terraform"
 
 dependencies:
-  community.general: ">=7.0.0,<8.0.0"
+  community.general: ">=7.0.0,<11.0.0"
