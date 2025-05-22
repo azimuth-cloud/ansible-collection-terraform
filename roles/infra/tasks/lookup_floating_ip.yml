@@ -6,5 +6,5 @@
   register: os_floating_ip_info_result
 
 - name: Set floating IP facts
-  set_fact:
+  ansible.builtin.set_fact:
     os_floating_ip_info: "{{ os_floating_ip_info_result.floating_ip }}"

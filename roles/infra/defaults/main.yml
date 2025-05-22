@@ -1,3 +1,4 @@
+---
 # The path to the Terraform binary, if not in the PATH
 terraform_binary_path:
 

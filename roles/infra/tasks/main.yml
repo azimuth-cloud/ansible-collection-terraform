@@ -1,96 +1,100 @@
 ---
-
 - name: Write backend type configuration
-  copy:
+  ansible.builtin.copy:
     content: |
       terraform {
         backend "{{ terraform_backend_type }}" { }
       }
     dest: "{{ terraform_project_path }}/backend.tf"
+    mode: "0644"
 
 - name: Set intermediate fact from terraform_backend_config
   # We need this to be sure that we can beat the precedence of
   # of terraform_backend_config in the next block, even if it
   # is supplied as a role param
-  set_fact:
+  ansible.builtin.set_fact:
     _terraform_backend_config: "{{ terraform_backend_config }}"
 
-- block:
-  - name: Warn if force_path_style is used in terraform_backend_config
-    # A simple debug.msg isn't obvious in stdout, so fail and ignore the
-    # failure.
-    fail:
-      msg: >-
-        The terraform_backend_config.force_path_style configuration
-        option is deprecated and terraform_backend_config.use_path_style
-        should be used instead!
-    ignore_errors: true
-
-  - name: Rename force_path_style to use_path_style
-    set_fact:
-      _terraform_backend_config: >-
-        {{
-          terraform_backend_config |
-          dict2items |
-          rejectattr('key', 'eq', 'force_path_style') |
-          items2dict |
-          combine({'use_path_style': terraform_backend_config.force_path_style})
-        }}
+- name: Rename force_path_style to use_path_style
   when:
     - terraform_backend_type is defined and terraform_backend_type == 's3'
     - terraform_backend_config.force_path_style is defined
     - not terraform_disable_s3_force_path_style_checks
+  block:
+    - name: Warn if force_path_style is used in terraform_backend_config
+      # A simple debug.msg isn't obvious in stdout, so fail and ignore the
+      # failure.
+      ansible.builtin.fail:
+        msg: >-
+          The terraform_backend_config.force_path_style configuration
+          option is deprecated and terraform_backend_config.use_path_style
+          should be used instead!
+      ignore_errors: true # noqa: ignore-errors
+
+    - name: Rename force_path_style to use_path_style
+      ansible.builtin.set_fact:
+        _terraform_backend_config: >-
+          {{
+            terraform_backend_config |
+            dict2items |
+            rejectattr('key', 'eq', 'force_path_style') |
+            items2dict |
+            combine({'use_path_style': terraform_backend_config.force_path_style})
+          }}
 
 - name: Write backend configuration options
-  copy:
+  ansible.builtin.copy:
     content: "{{ _terraform_backend_config | to_json }}"
     dest: "{{ terraform_project_path }}/backend_config.json"
+    mode: "0644"
 
 - name: Set terraform to rebuild patched appliances
-  include_tasks: rebuild.yml
+  ansible.builtin.include_tasks: rebuild.yml
   when:
     - terraform_rebuild_nodes
     - not terraform_readonly
 
 - name: Provision infrastructure using Terraform
-  terraform:
+  community.general.terraform:
     binary_path: "{{ terraform_binary_path or omit }}"
     project_path: "{{ terraform_project_path }}"
     state: "{{ terraform_state }}"
     backend_config_files:
       - "{{ terraform_project_path }}/backend_config.json"
-    force_init: yes
-    init_reconfigure: yes
+    force_init: true
+    init_reconfigure: true
     variables: "{{ terraform_variables }}"
   register: terraform_provision_state
   when: not terraform_readonly
 
 - name: Get outputs from Terraform state
+  when: terraform_readonly
   block:
-    - name: Initialise Terraform
-      command: >-
-        {{ terraform_binary_path | default('terraform', True) }}
-          -chdir="{{ terraform_project_path }}"
-          init
-          -input=false
-          -reconfigure
-          -backend-config="{{ terraform_project_path }}/backend_config.json"
+    - name: Initialise Terraform # noqa: no-changed-when
+      ansible.builtin.command:
+        chdir: "{{ terraform_project_path }}"
+        cmd: >-
+          {{ terraform_binary_path | default('terraform', True) }}
+            init
+            -input=false
+            -reconfigure
+            -backend-config="{{ terraform_project_path }}/backend_config.json"
 
-    - name: Pull Terraform state
-      command: >-
-        {{ terraform_binary_path | default('terraform', True) }}
-          -chdir="{{ terraform_project_path }}"
-          state
-          pull
+    - name: Pull Terraform state # noqa: no-changed-when
+      ansible.builtin.command:
+        chdir: "{{ terraform_project_path }}"
+        cmd: >-
+          {{ terraform_binary_path | default('terraform', True) }}
+            state
+            pull
       register: terraform_state_pull
 
     - name: Set Terraform provision state fact
-      set_fact:
+      ansible.builtin.set_fact:
         terraform_provision_state: "{{ terraform_state_pull.stdout | from_json }}"
-  when: terraform_readonly
 
 - name: Populate in-memory inventory
-  include_tasks: inventory_adopt.yml
-  when: 
+  ansible.builtin.include_tasks: inventory_adopt.yml
+  when:
     - terraform_state == 'present'
     - terraform_adopt_inventory

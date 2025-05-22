@@ -1,8 +1,11 @@
+---
 namespace: azimuth_cloud
 name: terraform
 version: 0.1.0
 description: Infrastructure provisioning and inventory population using Terraform.
 readme: README.md
+tags:
+  - "infrastructure"
 authors:
   - "Matt Pryor <matt@stackhpc.com>"
 license:

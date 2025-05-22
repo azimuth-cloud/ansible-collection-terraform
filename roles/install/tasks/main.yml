@@ -1,13 +1,13 @@
 ---
 
 - name: Check if Terraform binary exists in search directories
-  stat:
+  ansible.builtin.stat:
     path: "{{ item }}/tofu"
   register: terraform_binary_paths
   loop: "{{ terraform_search_directories }}"
 
 - name: Get available Terraform versions
-  command: "{{ item.stat.path }} version -json"
+  ansible.builtin.command: "{{ item.stat.path }} version -json"
   register: terraform_version_info
   changed_when: false
   loop: "{{ terraform_binary_paths.results | selectattr('stat.exists') }}"
@@ -15,7 +15,7 @@
     label: "{{ item.stat.path }}"
 
 - name: Set Terraform versions fact
-  set_fact:
+  ansible.builtin.set_fact:
     terraform_available_versions: >-
       [
         {% for item in terraform_version_info.results %}
@@ -24,7 +24,7 @@
       ]
 
 - name: Filter Terraform versions
-  set_fact:
+  ansible.builtin.set_fact:
     terraform_acceptable_versions: >-
       {{-
         terraform_available_versions |
@@ -34,37 +34,38 @@
       }}
 
 - name: Set Terraform binary path
-  set_fact:
+  ansible.builtin.set_fact:
     terraform_binary_path: "{{ terraform_acceptable_versions.0.0 }}"
     terraform_detected_version: "{{ terraform_acceptable_versions.0.1 }}"
   when: "terraform_acceptable_versions | length > 0"
 
-- name: show terraform_binary_path
-  debug:
+- name: Show terraform_binary_path
+  ansible.builtin.debug:
     var: terraform_binary_path
 
 - name: Download Terraform binary if an acceptable version is not available
+  when: terraform_binary_path is not defined
+  become: "{{ terraform_download_binary_become }}"
   block:
     - name: Ensure Terraform bin directory exists
-      file:
+      ansible.builtin.file:
         path: "{{ terraform_binary_directory }}"
         state: directory
+        mode: "0755"
 
     - name: Download Terraform binary
-      unarchive:
-        remote_src: yes
+      ansible.builtin.unarchive:
+        remote_src: true
         src: "{{ terraform_binary_url }}"
         dest: "{{ terraform_binary_directory }}"
 
     - name: Set current Terraform path fact
-      set_fact:
+      ansible.builtin.set_fact:
         terraform_binary_path: "{{ terraform_binary_directory }}/tofu"
-  when: terraform_binary_path is not defined
-  become: "{{ terraform_download_binary_become }}"
 
 - name: Display Terraform path and version message
-  debug:
-    msg: >- 
+  ansible.builtin.debug:
+    msg: >-
       Using Terraform version
       {{ terraform_detected_version | default(terraform_version_max) }}
       from {{ terraform_binary_path }}.
