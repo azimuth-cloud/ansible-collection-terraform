@@ -1,0 +1,11 @@
+---
+skip_list:
+  - galaxy[no-changelog]
+  - meta-runtime[unsupported-version]
+
+warn_list:
+  - var-naming
+
+exclude_paths:
+  - .ansible/**
+  - .github/**

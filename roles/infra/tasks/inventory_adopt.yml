@@ -1,41 +1,44 @@
 ---
 
 - name: Set facts from Terraform outputs
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_gateway_ip: "{{ terraform_provision_state.outputs.cluster_gateway_ip.value }}"
     cluster_nodes: "{{ terraform_provision_state.outputs.cluster_nodes.value }}"
 
 # We allow the SSH private key file to be specified
 # If it is not, we expect a private key to be in the Terraform outputs
-- block:
+- name: Set fact for SSH private key
+  when: cluster_ssh_private_key_file is not defined
+  block:
     - name: Get SSH private key from Terraform output
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_ssh_private_key: "{{ terraform_provision_state.outputs.cluster_ssh_private_key.value }}"
     - name: Get tempfile for SSH private key
-      tempfile:
+      ansible.builtin.tempfile:
       register: cluster_ssh_private_key_tempfile
     - name: Write cluster private key to file
-      copy:
+      ansible.builtin.copy:
         content: "{{ cluster_ssh_private_key }}"
         dest: "{{ cluster_ssh_private_key_tempfile.path }}"
         mode: u=rw
     - name: Set fact for SSH private key file
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_ssh_private_key_file: "{{ cluster_ssh_private_key_tempfile.path }}"
-  when: cluster_ssh_private_key_file is not defined
 
 - name: Set fact for SSH common args for cluster nodes
-  set_fact:
+  ansible.builtin.set_fact:
     # The hosts are accessed via a bastion
     # We can't just use ProxyJump here because we need agent forwarding, which is disabled even when
     # StrictHostKeyChecking=no in the case where a host key changes and the host is still in the
-    # UserKnownHostsFile
+    # UserKnownHostsFile
     # So we need to also make sure that the UserKnownHostsFile is empty for the proxy command
+    # yamllint disable rule:line-length
     cluster_ssh_common_args: >-
       -o ProxyCommand='ssh -i {{ cluster_ssh_private_key_file }} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -W %h:%p {{ cluster_gateway_user }}@{{ cluster_gateway_ip }}'
+    # yamllint enable rule:line-length
 
 - name: Add gateway node to in-memory inventory
-  add_host:
+  ansible.builtin.add_host:
     name: gateway
     ansible_host: "{{ cluster_gateway_ip }}"
     ansible_user: "{{ cluster_ssh_user }}"
@@ -43,9 +46,9 @@
     inventory_dir: "{{ inventory_dir }}"
 
 - name: Add cluster nodes to in-memory inventory
-  add_host:
+  ansible.builtin.add_host:
     name: "{{ node.name }}"
-    # Add the node to it's specified primary group and the cluster group
+    # Add the node to it's specified primary group and the cluster group
     groups: "{{ ['cluster'] + node.groups }}"
     ansible_host: "{{ node.ip }}"
     ansible_user: "{{ cluster_ssh_user }}"
@@ -59,7 +62,7 @@
     label: "{{ node.name }}"
 
 - name: Set facts for nodes
-  include_tasks: set_node_facts.yml
+  ansible.builtin.include_tasks: set_node_facts.yml
   loop: "{{ cluster_nodes }}"
   loop_control:
     loop_var: node
@@ -70,20 +73,20 @@
 # before wait_for_connection.
 # https://github.com/ansible/ansible/issues/80514
 - name: Wait for sshd to be listening on the gateway node
-  wait_for:
+  ansible.builtin.wait_for:
     port: 22
     host: "{{ cluster_gateway_ip }}"
     search_regex: OpenSSH
     timeout: 600
 
 - name: Wait for Ansible to connect to the gateway node
-  wait_for_connection:
+  ansible.builtin.wait_for_connection:
     # Wait for 10 mins for host to become available
     timeout: 600
   delegate_to: gateway
 
 - name: Wait for sshd to be listening on cluster nodes
-  wait_for:
+  ansible.builtin.wait_for:
     # Wait for 10 mins for host to become available
     timeout: 600
     host: "{{ node.ip }}"
@@ -96,7 +99,7 @@
     label: "{{ node.name }}"
 
 - name: Wait for Ansible to connect to the cluster nodes
-  wait_for_connection:
+  ansible.builtin.wait_for_connection:
     # Wait for 10 mins for host to become available
     timeout: 600
   delegate_to: "{{ node.name }}"
