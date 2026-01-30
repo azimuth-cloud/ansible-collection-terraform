@@ -17,11 +17,10 @@
 - name: Set Terraform versions fact
   ansible.builtin.set_fact:
     terraform_available_versions: >-
-      [
-        {% for item in terraform_version_info.results %}
-        ("{{ item.item.stat.path }}", "{{ item.stdout | from_json | json_query('terraform_version') }}"),
-        {% endfor %}
-      ]
+      {{ terraform_version_info.results | map(attribute='item.stat.path') | zip(
+           terraform_version_info.results | map(attribute='stdout') | map('from_json') | map(attribute='terraform_version')
+         ) | list }}
+
 
 - name: Filter Terraform versions
   ansible.builtin.set_fact:
@@ -42,6 +41,8 @@
 - name: Show terraform_binary_path
   ansible.builtin.debug:
     var: terraform_binary_path
+  when: terraform_binary_path is defined
+    
 
 - name: Download Terraform binary if an acceptable version is not available
   when: terraform_binary_path is not defined
