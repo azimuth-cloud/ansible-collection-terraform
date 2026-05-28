@@ -125,9 +125,7 @@ def preflight_validation(bin_path, project_path):
         )
 
 
-def init_plugins(
-    bin_path, project_path, backend_config, backend_config_files, plugin_paths
-):
+def init_plugins(bin_path, project_path, backend_config, backend_config_files, plugin_paths):
     command = [bin_path, "init", "-input=false", "-reconfigure"]
     if backend_config:
         for key, val in backend_config.items():
@@ -190,9 +188,7 @@ def main():
     bin_path = bin_path or module.get_bin_path("terraform", required=True)
 
     # Always initialise the backend
-    init_plugins(
-        bin_path, project_path, backend_config, backend_config_files, plugin_paths
-    )
+    init_plugins(bin_path, project_path, backend_config, backend_config_files, plugin_paths)
 
     # Check the workspace if required
     workspace_ctx = get_workspace_context(bin_path, project_path)

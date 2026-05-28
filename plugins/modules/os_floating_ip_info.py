@@ -1,4 +1,5 @@
 #!/usr/bin/python
+"""Module os_floating_ip_info"""
 
 # Copyright (c) 2019 STFC.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
@@ -63,6 +64,7 @@ fip_ip:
 
 
 def main():
+    """main"""
     argument_spec = openstack_full_argument_spec(
         floating_ip={"required": True, "type": "str"},
     )
