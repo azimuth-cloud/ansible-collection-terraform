@@ -66,6 +66,8 @@
     variables: "{{ terraform_variables }}"
   register: terraform_provision_state
   when: not terraform_readonly
+  environment:
+    TF_HTTP_UNLOCK_METHOD: DELETE
 
 - name: Get outputs from Terraform state
   when: terraform_readonly
