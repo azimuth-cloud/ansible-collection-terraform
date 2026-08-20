@@ -48,6 +48,10 @@
     dest: "{{ terraform_project_path }}/backend_config.json"
     mode: "0644"
 
+- name: Debug backend configuration options
+  ansible.builtin.debug:
+    msg: "{{ _terraform_backend_config | to_json }}"
+
 - name: Set terraform to rebuild patched appliances
   ansible.builtin.include_tasks: rebuild.yml
   when:
@@ -66,6 +70,8 @@
     variables: "{{ terraform_variables }}"
   register: terraform_provision_state
   when: not terraform_readonly
+  environment:
+    TF_HTTP_UNLOCK_METHOD: DELETE
 
 - name: Get outputs from Terraform state
   when: terraform_readonly
