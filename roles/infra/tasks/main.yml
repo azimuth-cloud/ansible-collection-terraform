@@ -48,6 +48,10 @@
     dest: "{{ terraform_project_path }}/backend_config.json"
     mode: "0644"
 
+- name: Debug backend configuration options
+  ansible.builtin.debug:
+    msg: "{{ _terraform_backend_config | to_json }}"
+
 - name: Set terraform to rebuild patched appliances
   ansible.builtin.include_tasks: rebuild.yml
   when:
