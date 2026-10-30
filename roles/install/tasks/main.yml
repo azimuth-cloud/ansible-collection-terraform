@@ -10,18 +10,20 @@
   ansible.builtin.command: "{{ item.stat.path }} version -json"
   register: terraform_version_info
   changed_when: false
-  loop: "{{ terraform_binary_paths.results | selectattr('stat.exists') }}"
+  loop: "{{ terraform_binary_paths.results | selectattr('stat.exists') | list }}"
   loop_control:
     label: "{{ item.stat.path }}"
 
 - name: Set Terraform versions fact
   ansible.builtin.set_fact:
     terraform_available_versions: >-
-      [
-        {% for item in terraform_version_info.results %}
-        ("{{ item.item.stat.path }}", "{{ item.stdout | from_json | json_query('terraform_version') }}"),
-        {% endfor %}
-      ]
+      {{
+        terraform_version_info.results |
+          map(attribute='item.stat.path') |
+          zip(terraform_version_info.results | map(attribute='stdout') | map('from_json') | map(attribute='terraform_version')) |
+          map('list') |
+          list
+      }}
 
 - name: Filter Terraform versions
   ansible.builtin.set_fact:
@@ -30,7 +32,8 @@
         terraform_available_versions |
           selectattr('1', 'version', terraform_version_min, '>=') |
           selectattr('1', 'version', terraform_version_max, '<=') |
-          sort(attribute = '1', reverse = True)
+          sort(attribute = '1', reverse = True) |
+          list
       }}
 
 - name: Set Terraform binary path
@@ -39,9 +42,10 @@
     terraform_detected_version: "{{ terraform_acceptable_versions.0.1 }}"
   when: "terraform_acceptable_versions | length > 0"
 
-- name: Show terraform_binary_path
+- name: Show terraform_binary_path if defined
   ansible.builtin.debug:
     var: terraform_binary_path
+  when: terraform_binary_path is defined
 
 - name: Download Terraform binary if an acceptable version is not available
   when: terraform_binary_path is not defined
