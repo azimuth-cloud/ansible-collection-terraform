@@ -6,9 +6,9 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+from shlex import quote as shlex_quote
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.six.moves import shlex_quote
 
 __metaclass__ = type
 

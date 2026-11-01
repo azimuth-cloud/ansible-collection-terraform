@@ -1,11 +1,11 @@
 # Acceptable OpenTofu versions. If a binary fulfilling these criteria is not found,
 # terraform_version_max will be downloaded.
-terraform_version_min: 1.9.1
-terraform_version_max: 1.9.1
+terraform_version_min: 1.13.2
+terraform_version_max: 1.13.2
 
 # The OS variant and architecture to use
-terraform_os: "{{ ansible_system | lower }}"
-terraform_architecture: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+terraform_os: "{{ ansible_facts.system | lower }}"
+terraform_architecture: "{{ 'amd64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
 # The name of the Terraform zip
 terraform_zip_name: tofu_{{ terraform_version_max }}_{{ terraform_os }}_{{ terraform_architecture }}.zip
 # The URL of the Terraform binary
