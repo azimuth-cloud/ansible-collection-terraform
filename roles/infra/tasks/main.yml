@@ -54,6 +54,11 @@
     - terraform_rebuild_nodes
     - not terraform_readonly
 
+- name: Pause before Terraform provisioning
+  ansible.builtin.pause:
+    prompt: "Terraform is about to provision infrastructure. Press ENTER to continue or Ctrl+C, then A to abort."
+  when: not terraform_readonly
+
 - name: Provision infrastructure using Terraform
   community.general.terraform:
     binary_path: "{{ terraform_binary_path or omit }}"
